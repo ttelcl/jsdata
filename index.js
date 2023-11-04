@@ -1,13 +1,31 @@
-import { parseArguments } from "./jstrx/js-trx.js";
+import {
+  parseArguments,
+  loadJson,
+  trx,
+  projectToModel
+} from "./jstrx/js-trx.js";
 
-console.log("hello world!");
+console.log("hello world!")
 
 const args = [...process.argv]
-//args.splice(0,2)
 
 const filePairs = parseArguments(args)
-for (const {inputFile, outputFile} of filePairs) {
-  console.log(` "${inputFile}" -> "${outputFile}"`)
+
+const model = {
+  character: {
+    name: "",
+    id: 0,
+    realm: {
+      name: "",
+      id: trx.number,
+      slug: trx.string
+    },
+  },
 }
 
-
+for (const { inputFile, outputFile } of filePairs) {
+  console.log(` "${inputFile}" -> "${outputFile}"`)
+  const data = loadJson(inputFile)
+  const projected = projectToModel(data, model)
+  console.log(JSON.stringify(projected, null, 2))
+}

@@ -2,6 +2,10 @@
 *.ignore.*
 _*
 
+# specific data to ignore
+eu.*.json
+*.out.json
+
 # Dependency directories
 node_modules/
 jspm_packages/
