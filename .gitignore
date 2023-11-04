@@ -1,4 +1,6 @@
+# generic files-to-ignore patterns
 *.ignore.*
+_*
 
 # Dependency directories
 node_modules/
