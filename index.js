@@ -5,8 +5,6 @@ import {
   projectToModel
 } from "./jstrx/js-trx.js";
 
-console.log("hello world!")
-
 const args = [...process.argv]
 
 const filePairs = parseArguments(args)

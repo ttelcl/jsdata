@@ -71,7 +71,23 @@ function typeofEx(value) {
 }
 
 function projectObject(data, model) {
-  throw new Error("NYI: projectObject")
+  if (data === null || typeof(data) !== "object" || Array.isArray(data)) {
+    return undefined;
+  }
+  if (model === null || typeof(model) !== "object" || Array.isArray(model)) {
+    throw new Error("Expecting a model that is an object")
+  }
+  const result = {}
+  for (const [key, modelValue] of Object.entries(model)) {
+    const dataValue = data[key]
+    if (dataValue !== undefined) {
+      const projectedValue = projectAny(dataValue, modelValue)
+      if (projectedValue !== undefined) {
+        result[key] = projectedValue
+      }
+    }
+  }
+  return result
 }
 
 function projectArray(data, model) {
