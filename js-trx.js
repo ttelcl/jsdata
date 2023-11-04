@@ -21,6 +21,51 @@ import {
  */
 
 /**
+ * Arguments to a "merge" function. Note that the value to be bound is NOT
+ * part of this
+ * @typedef {Object} MergeArguments
+ * @property {any[]} [hostArray] The array to merge into, when merging into an array.
+ * Mutually exclusive with hostObject
+ * @property {Object.<string,any>} [hostObject] The object to merge into, when merging into
+ * an object. Mutually exclusive with hostArray. Must be accompanied by hostKey
+ * @property {string} [hostKey] The name of the property in the hostObject that would
+ * be set in the "plain" merging case. The plain case would be (hostObject[hostKey] = value) 
+ */
+
+/**
+ * A function that merges a child value into an object or array host.
+ * It is up to the function to define "merging". A default case would be
+ * to set hostObject[hostKey] to value for objects, or to hostArray.push(value)
+ * for arrays, but implementations can choose other interpretations, such
+ * as conditionally not doing anything at all, merging child properties in the
+ * host, renaming the hostKey, or anything else.
+ * The value to be merged is already bound into this function
+ * @typedef {(MergeArguments) => undefined} boundMergeFunction
+ */
+
+/**
+ * An unbound merge function, representing the actual merging function invoked
+ * by a bound merge function.
+ * @typedef {(args:MergeArguments,value:any) => undefined} unboundMergeFunction
+ */
+
+/**
+ * Bind an unbound merge function to a value, returning the resulting bound merge function
+ * @param {unboundMergeFunction} umf
+ * @param {any} value 
+ * @returns {boundMergeFunction}
+ */
+export function bindMergeFunction(umf, value) {
+  if (value === undefined) {
+    throw new Error(`Not expecting an undefined value here`)
+  }
+  if (typeof(value) === "function") {
+    throw new Error(`Not expecting a function value`)
+  }
+  return (args) => umf(args, value)
+}
+
+/**
  * Extended version of typeof(), furthe distinguishing "object" into
  * "null", "array" and "object"
  * @param {any} value 
@@ -49,7 +94,12 @@ function projectObject(data, model) {
     if (dataValue !== undefined) {
       const projectedValue = projectAny(dataValue, modelValue)
       if (projectedValue !== undefined) {
-        result[key] = projectedValue
+        if (typeof (projectedValue) === "function") {
+          // assume it is a boundMergeFunction
+          projectedValue({hostObject: result, hostKey: key})
+        } else {
+          result[key] = projectedValue 
+        }
       }
     }
   }
@@ -79,7 +129,12 @@ function projectArray(data, model, nullIfNotMatching) {
       if (projected !== undefined) { break }
     }
     if (projected !== undefined) {
-      result.push(projected)
+      if (typeof(projected) === "function") {
+        // assume it is a boundMergeFunction that supports arrays
+        projected({hostArray: result})
+      } else {
+        result.push(projected)
+      }
     } else if (nullIfNotMatching) {
       result.push(null)
     }
@@ -127,9 +182,17 @@ function getModelMatcher(model) {
   }
 }
 
+/**
+ * Try to project the data to the model. This may return undefined,
+ * a primitive value, an array, an object, or a merge function.
+ * @param {any} data 
+ * @param {any} model 
+ * @returns {any}
+ */
 function projectAny(data, model) {
   const matcher = getModelMatcher(model);
-  return matcher(data, model);
+  const result = matcher(data, model);
+  return result;
 }
 
 /**
@@ -213,6 +276,43 @@ export const trx = {
     return (value, ignored) => trx._array(value, model)
   },
 
+  /**
+   * Create a matcher function that flattens the intermediate object created
+   * by matching the intermediate model into the host object
+   * @param {Object.<string,any>} model The model for the intermediate object
+   * @returns A matcher function that in turn either returns a bound
+   * merge function or undefined.
+   */
+  flatten: function (model) {
+    return (value, ignored) => {
+      const value2 = trx._object(value, model)
+      if (value2 === undefined) {
+        return undefined
+      } else {
+        return bindMergeFunction(flattenUnbound, value2)
+      }
+    }
+  },
+
+
+}
+
+/**
+ * The unbound merge function backing the "flatten" functionality
+ * @param {MergeArguments} args 
+ * @param {any} value 
+ */
+function flattenUnbound(args, value) {
+  if (value === undefined) {
+    throw new Error(`Not expecting value 'undefined' here. Did you try to call this without binding?`)
+  }
+  const {hostObject, hostKey} = args
+  if (!hostObject || !hostKey) {
+    throw new Error(`Expecting a host object to merge data into and a key ("flatten" can only be used in objects, not arrays)`)
+  }
+  for(const [k,v] of Object.entries(value)) {
+    hostObject[`${hostKey}-${k}`] = v
+  }
 }
 
 // ------------------------------------------------------------------------
