@@ -14,11 +14,16 @@ modelLibrary.equipment = {
       slug: trx.string
     },
   },
-  equipped_items: [{
-    item: { id: 0 },
+  // equipped_items: [{
+  //   item: trx.object({ id: 0 }),
+  //   slot: { name: "" },
+  //   name: "",
+  // }]
+  equipped_items: trx.array([{
+    item: trx.object({ id: 0 }),
     slot: { name: "" },
     name: "",
-  }]
+  }]),
 }
 modelLibrary.default = modelLibrary.equipment
 

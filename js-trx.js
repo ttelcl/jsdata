@@ -197,12 +197,21 @@ export const trx = {
 
   /**
    * This is not a matcher itself, but calling it returns a matcher
-   * function that matches the model
-   * @param {any} model 
+   * function that matches the model object
+   * @param {Object.<string,any>} model 
    */
-  object: function(model) {
+  object: function (model) {
     return (value, ignored) => trx._object(value, model)
-  }
+  },
+
+  /**
+   * This is not a matcher itself, but calling it returns a matcher
+   * function that matches the model array
+   * @param {any[]} model 
+   */
+  array: function (model) {
+    return (value, ignored) => trx.array(value, model)
+  },
 
 }
 

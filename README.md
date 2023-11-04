@@ -67,10 +67,12 @@ used for this purpose.
 
 | name | description |
 | --- | --- |
-| `trx.string` | Only matches string values. Equivalent to specifying a string. |
-| `trx.number` | Only matches numbers. Equivalent to specifying a number |
-| `trx.boolean` | Only matches booleans. Equivalent to speciying `true` or `false` |
-| `trx.fail` | Does not match anything. Can be used to explicitly not copy a field that otherwise would be copied |
+| `trx.string` | A matcher that only matches string values. Equivalent to specifying a string. |
+| `trx.number` | A matcher that only matches numbers. Equivalent to specifying a number |
+| `trx.boolean` | A matcher that only matches booleans. Equivalent to speciying `true` or `false` |
+| `trx.fail` | A matcher that does not match anything. Can be used to explicitly not copy a field that otherwise would be copied |
+| `trx.object(model)` | A function that returns a matcher matching the argument object model |
+| `trx.array(model)` | A function that returns a matcher matching the argument array model |
 
 More functions will be added to `trx` in the future.
 
