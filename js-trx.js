@@ -210,7 +210,7 @@ export const trx = {
    * @param {any[]} model 
    */
   array: function (model) {
-    return (value, ignored) => trx.array(value, model)
+    return (value, ignored) => trx._array(value, model)
   },
 
 }

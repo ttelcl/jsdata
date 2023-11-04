@@ -14,11 +14,6 @@ modelLibrary.equipment = {
       slug: trx.string
     },
   },
-  // equipped_items: [{
-  //   item: trx.object({ id: 0 }),
-  //   slot: { name: "" },
-  //   name: "",
-  // }]
   equipped_items: trx.array([{
     item: trx.object({ id: 0 }),
     slot: { name: "" },
