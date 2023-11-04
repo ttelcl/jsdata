@@ -1,6 +1,7 @@
 # generic files-to-ignore patterns
 *.ignore.*
 _*
+*.bak
 
 # specific data to ignore
 eu.*.json
