@@ -111,12 +111,12 @@ function getModelMatcher(model) {
     case "array":
       // The model only matches an array, and the data is projected
       // to the specification of the content in the model array
-      return trx.array;
+      return trx._array;
     case "object":
       // The model only matches an object (that is not null nor an array),
       // and the data is projected to the specification of the content in
       // the model object
-      return trx.object;
+      return trx._object;
     case "undefined":
       // Returns a matcher that always fails
       return trx.fail;
@@ -151,6 +151,10 @@ export function projectToModel(data, modelOrLibrary, modelName) {
   return projectAny(data, model);
 }
 
+/**
+ * A collection of transformation functions for use in your
+ * models.
+ */
 export const trx = {
   string: function (value, model) {
     if (typeof (value) === "string") {
@@ -173,14 +177,14 @@ export const trx = {
     return undefined;
   },
 
-  object: function (value, model) {
+  _object: function (value, model) {
     if (typeof (value) === "object" && !Array.isArray(value)) {
       return projectObject(value, model);
     }
     return undefined;
   },
 
-  array: function (value, model) {
+  _array: function (value, model) {
     if (typeof (value) === "object" && Array.isArray(value)) {
       return projectArray(value, model, false)
     }
@@ -190,6 +194,15 @@ export const trx = {
   fail: function (value, model) {
     return undefined;
   },
+
+  /**
+   * This is not a matcher itself, but calling it returns a matcher
+   * function that matches the model
+   * @param {any} model 
+   */
+  object: function(model) {
+    return (value, ignored) => trx._object(value, model)
+  }
 
 }
 
