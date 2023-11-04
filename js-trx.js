@@ -1,4 +1,4 @@
-import { 
+import {
   readFileSync,
   writeFileSync,
   copyFileSync,
@@ -136,15 +136,16 @@ function projectAny(data, model) {
  * Project a data object to the named model selected from the given
  * model library
  * @param {any} data The data to project
- * @param {Object.<string,any>} modelLibray A map from model names to models
- * @param {string | undefined} modelName The name of the model (undefined is interpreted as "default")
+ * @param {Object.<string,any> | any} modelOrLibray A map from model names to models, or the
+ * model itself if modelName is undefined.
+ * @param {string | undefined} modelName The name of the model (if undefined, modelOrLibrary
+ * is interpreted as the model itself)
  * @returns {any} The projected data
  */
-export function projectToModel(data, modelLibrary, modelName) {
-  modelName ??= "default"
-  const model = modelLibrary[modelName]
+export function projectToModel(data, modelOrLibrary, modelName) {
+  const model = modelName === undefined ? modelOrLibrary : modelOrLibrary[modelName]
   if (model === undefined) {
-    const modelNames = Object.keys(modelLibrary).join(", ")
+    const modelNames = Object.keys(modelOrLibrary).join(", ")
     throw new Error(`Unknown model "${modelName}". Known model names are: ${modelNames}`)
   }
   return projectAny(data, model);
@@ -261,7 +262,7 @@ export function saveJson(filename, data) {
     }
     renameSync(filename, bakName)
   }
-  if (typeof(data) !== "string") {
+  if (typeof (data) !== "string") {
     data = JSON.stringify(data, null, 2)
   }
   writeFileSync(filename, data) // UTF8 is default
@@ -285,14 +286,20 @@ export function runTransformApplication(modelLibrary, args) {
     console.log(`Known model names are: ${modelNames}`)
   } else {
     for (const { modelName, inputFile, outputFile } of transformations) {
-      console.log(` "${inputFile}" -> "${outputFile}" (model "${modelName}")`)
-      const data = loadJson(inputFile)
-      const projected = projectToModel(data, modelLibrary, modelName)
-      const json = JSON.stringify(projected, null, 2)
-      if (outputFile === "-") {
-        console.log(json)
+      const model = modelLibrary[modelName]
+      if (!model) {
+        console.error(`  Unknown model "${modelName}". Skipping input "${inputFile}"`)
       } else {
-        saveJson(outputFile, json)
+        console.log(` Processing "${inputFile}" (using model "${modelName}")`)
+        const data = loadJson(inputFile)
+        const projected = projectToModel(data, modelLibrary, modelName)
+        const json = JSON.stringify(projected, null, 2)
+        if (outputFile === "-") {
+          console.log(json)
+        } else {
+          console.log(`    Writing "${outputFile}"`)
+          saveJson(outputFile, json)
+        }
       }
     }
   }
