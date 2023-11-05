@@ -1,7 +1,6 @@
 import {
   readFileSync,
   writeFileSync,
-  copyFileSync,
   rmSync,
   renameSync,
   existsSync,
@@ -11,13 +10,6 @@ import {
  * Function that tries to match the actual data to the given model,
  * returning the projected data on success, or undefined if not matched
  * @typedef {(data: any, model: any) => any} matchFunction
- */
-
-/**
- * @typedef {Object} Transformation
- * @property {string} modelName
- * @property {string} inputFile
- * @property {string} outputFile
  */
 
 /**
@@ -225,6 +217,7 @@ export function projectToModel(data, modelOrLibrary, modelName) {
  * - a bound merge function, {(MergeArguments) => undefined}, which modifies
  *   the parent result object or array in some way other than setting the
  *   property or pushing the value.
+ * @type {Object.<string,matchFunction>}
  */
 export const match = {
   string: function (value, model) {
@@ -321,6 +314,7 @@ export const makeMatch = {
  * An unbound merge function takes a MergeArguments target descriptor
  * and a value to insert that value into the target array or object
  * in some way other than usual.
+ * @type {Object.<string,unboundMergeFunction>}
  */
 export const unboundMerge = {
   /**
@@ -344,6 +338,13 @@ export const unboundMerge = {
 }
 
 // ------------------------------------------------------------------------
+
+/**
+ * @typedef {Object} Transformation
+ * @property {string} modelName
+ * @property {string} inputFile
+ * @property {string} outputFile
+ */
 
 /**
  * Parse arguments. Currently the only supported arguments are of
@@ -419,7 +420,7 @@ export function saveJson(filename, data) {
 }
 
 /**
- * 
+ * Run the application.
  * @param {any} modelLibrary The library that maps model names to models.
  * At the minimum this should contain a model named "default"
  * @param {string[] | undefined} args The application arguments providing
