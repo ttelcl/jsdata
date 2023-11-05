@@ -12,8 +12,11 @@ The following files are included:
 
 * `README.md` this documentation file
 * `json-reshape.js` The main functionality
-* `index.js` An example of how to use this tool
+* `index.js` An small example of how to use this tool. Suitable for use
+  as a template.
 * `package.json` A bare-bones node.js project file
+* `example.js` and `data-sample-1.json` a slightly more extensive example
+  demonstrating functionality in more depth.
 
 The code has been developed with the current LTS version of node.js
 in mind (v20.9.0). There are currently no external dependencies, so
