@@ -7,14 +7,14 @@ import {
 } from 'node:fs';
 
 /**
- * Function that tries to match the actual data to the given model,
- * returning the projected data on success, or undefined if not matched
- * @typedef {(data: any, model: any) => any} matchFunction
+ * Function that tries to match the actual data to the model implied
+ * by this function, returning the projected data or a merge function 
+ * on success, or undefined if not matched
+ * @typedef {(data: any) => any} matchFunction
  */
 
 /**
- * Arguments to a "merge" function. Note that the value to be bound is NOT
- * part of this
+ * Arguments to a merge function. Note that the value to be merged is NOT part of this
  * @typedef {Object} MergeArguments
  * @property {any[]} [hostArray] The array to merge into, when merging into an array.
  * Mutually exclusive with hostObject
@@ -58,8 +58,8 @@ export function bindMergeFunction(umf, value) {
 }
 
 /**
- * Extended version of typeof(), furthe distinguishing "object" into
- * "null", "array" and "object"
+ * Extended version of typeof(), further distinguishing "object" into
+ * "null", "array" or "object"
  * @param {any} value 
  * @returns {string}
  */
@@ -158,12 +158,12 @@ function getModelMatcher(model) {
     case "array":
       // The model only matches an array, and the data is projected
       // to the specification of the content in the model array
-      return match._array;
+      return (data) => projectArray(data, model, false);
     case "object":
       // The model only matches an object (that is not null nor an array),
       // and the data is projected to the specification of the content in
       // the model object
-      return match._object;
+      return (data) => projectObject(data, model);
     case "undefined":
       // Returns a matcher that always fails
       return match.fail;
@@ -177,13 +177,15 @@ function getModelMatcher(model) {
 /**
  * Try to project the data to the model. This may return undefined,
  * a primitive value, an array, an object, or a merge function.
- * @param {any} data 
- * @param {any} model 
- * @returns {any}
+ * @param {any} data The data to match and project
+ * @param {any} model The model to match to
+ * @returns {any} The result of the match and project operation:
+ * undefined to indicate no match, a concrete projection result,
+ * or a merge function
  */
 function projectAny(data, model) {
   const matcher = getModelMatcher(model);
-  const result = matcher(data, model);
+  const result = matcher(data);
   return result;
 }
 
@@ -201,46 +203,23 @@ function projectAny(data, model) {
  * @type {Object.<string,matchFunction>}
  */
 export const match = {
-  string: function (value, model) {
-    if (typeof (value) === "string") {
-      return value;
-    }
-    return undefined;
+  string: function (data) {
+    return typeof (data) === "string" ? data : undefined;
   },
 
-  number: function (value, model) {
-    if (typeof (value) === "number") {
-      return value;
-    }
-    return undefined;
+  number: function (data) {
+    return typeof (data) === "number" ? data : undefined;
   },
 
-  boolean: function (value, model) {
-    if (typeof (value) === "boolean") {
-      return value;
-    }
-    return undefined;
+  boolean: function (data) {
+    return typeof (data) === "boolean" ? data : undefined;
   },
 
-  null: function (value, model) {
-    return value === null ? null : undefined;
+  null: function (data) {
+    return data === null ? null : undefined;
   },
 
-  _object: function (value, model) {
-    if (typeof (value) === "object" && !Array.isArray(value)) {
-      return projectObject(value, model);
-    }
-    return undefined;
-  },
-
-  _array: function (value, model) {
-    if (typeof (value) === "object" && Array.isArray(value)) {
-      return projectArray(value, model, false)
-    }
-    return undefined;
-  },
-
-  fail: function (value, model) {
+  fail: function (ignored) {
     return undefined;
   },
 
@@ -260,7 +239,7 @@ export const makeMatch = {
    * @returns {matchFunction}
    */
   object: function (model) {
-    return (value, ignored) => projectObject(value, model)
+    return (value) => projectObject(value, model)
   },
 
   /**
@@ -269,7 +248,7 @@ export const makeMatch = {
    * @returns {matchFunction} 
    */
   array: function (model) {
-    return (value, ignored) => projectArray(value, model, false)
+    return (value) => projectArray(value, model, false)
   },
 
   /**
@@ -280,7 +259,7 @@ export const makeMatch = {
    * merge function bound to the model or undefined (to indicate a non-match).
    */
   flatten: function (model) {
-    return (value, ignored) => {
+    return (value) => {
       const value2 = projectObject(value, model)
       if (value2 === undefined) {
         return undefined

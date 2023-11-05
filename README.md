@@ -43,8 +43,9 @@ Specifies the input file and prints the output to stdout.
 `-m model`
 
 Specifies the model to use for subsequent data files (`-f` options). The models
-available are provided by you as a "library" of named models. Before the
-first `-m` option the selected model is the model named "`default`".
+available are provided by you as a "library" of named models when you call
+`runTransformApplication()`. Before the first `-m` option, the selected model is
+the model named "`default`".
 
 # Operation
 
@@ -59,24 +60,35 @@ This call handles command line parsing, loading data and writing the output.
 
 # Models
 
-Each models is defined as a JavaScript model of the JSON output. The structure
-of objects and arrays is copied from the input (skipping input fields that are
-not named in the model). A primitive value in the model is just an indicator of
-the type of data expected: a string in the input is copied to the output if the
-model has any string in that position (the value of the string doesn't matter,
-so use a plain `""` to keep it simple). Similar rules apply for numbers and
-booleans. Mismatched values are not copied.
+Each model is defined as a JavaScript DSL model of the intended JSON output.
+The structure of objects and arrays is copied from the input (skipping input
+fields that are not named in the model). A primitive value in the model is
+just an indicator of the type of data expected: a string in the input is copied
+to the output if the model has any string in that position (the value of the
+string doesn't matter, so use a plain `""` to keep it simple). Similar rules
+apply for numbers and booleans. Mismatched values are not copied.
+
+When modeling an array, the first matching child model is used.
 
 ## Matcher functions
 
 In addition to literals (be they primitives or composites) you can also use
 function values to provide more powerful matching and transformation options.
 The `match` and `makeMatch` namespace objects in `json-reshape.js` provide
-collections of functions designed to be used for this purpose.
+collections of such "matcher" functions and "matcher factory" functions
+designed to be used for this purpose.
+
+A _matcher function_ has the type `{(data: any) => any}`. It takes the value
+fragment from the input data and matches it to the model that is implied
+in the matcher function. That means that for more complex models, the
+matcher function in practice is a lambda that encapsulates the model.
+
+A _matcher factory function_ is a function that returns a
+_matcher function_, encapsulating the factory function arguments in some way.
 
 More functions will be added to the `match` and `makeMatch` namespaces in the future.
 
-### Direct matcher functions (match.*)
+### Plain matcher functions (match.*)
 
 The `match` namespace contains functions that are match functions themselves,
 that can be included in your model directly (that is: you just include their
@@ -84,21 +96,19 @@ name, you don't invoke them).
 
 | name | description |
 | --- | --- |
-| `match.string` | A matcher that only matches string values. Equivalent to specifying a string. |
-| `match.number` | A matcher that only matches numbers. Equivalent to specifying a number |
+| `match.string` | A matcher that only matches string values. Equivalent to specifying any string. |
+| `match.number` | A matcher that only matches numbers. Equivalent to specifying any number |
 | `match.boolean` | A matcher that only matches booleans. Equivalent to speciying `true` or `false` |
 | `match.null` | A matcher that only matches null. Equivalent to speciying `null` |
-| `match.fail` | A matcher that does not match anything. Can be used to explicitly not copy a field that otherwise would be copied |
+| `match.fail` | A matcher that does not match anything. Can be used to explicitly not project a field that otherwise would be projected |
 
-### Indirect matcher functions (makeMatch.*)
+### Matcher factory functions (makeMatch.*)
 
 The `makeMatch` namespace contains functions that return a matcher function
 as their result. This indirection allows passing arguments such as explicit models
 to guide the matching and projection process in ways that plain matchers can't.
-The matcher functions returned by these matcher factory functions typically have
-their model already "baked in", and they just ignore the model passed
-by the matcher call (that model that is passed in the call is the matcher
-function itself, using it would just lead to infinite recursion).
+The matcher functions returned by these matcher factory functions encapsulate
+their model.
 
 | name | description |
 | --- | --- |
@@ -125,7 +135,7 @@ A _bound merge function_ has the prototype `(MergeArguments) => void`,
 where `MergeArguments` is either `{hostArray: any[]}` for array merges or
 `{hostObject:Object,hostKey:string}` for object merges. Note that the
 value to be merged is not available as an argument, it should be present
-(_bound_) in the function already.
+(_bound_) in the function in some way already.
 
 A _bound merge function_ defines two aspects:
 * The functionality of how the projected content is to be merged into the host object or host array
