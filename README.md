@@ -6,6 +6,19 @@ This tool implements a JSON remapping tool, taking a JSON file as input, and
 keeping only parts that match a model.
 The model is provided by your calling code (see `index.js` for an example).
 
+# Source File guide
+
+The following files are included:
+
+* `README.md` this documentation file
+* `json-reshape.js` The main functionality
+* `index.js` An example of how to use this tool
+* `package.json` A bare-bones node.js project file
+
+The code has been developed with the current LTS version of node.js
+in mind (v20.9.0). There are currently no external dependencies, so
+there is no need to "npm install".
+
 # Synopsis
 
 ```
@@ -58,7 +71,7 @@ booleans. Mismatched values are not copied.
 
 In addition to literals (be they primitives or composites) you can also use
 function values to provide more powerful matching and transformation options.
-The `match` and `makeMatch` namespace objects in `js-trx.js` provide
+The `match` and `makeMatch` namespace objects in `json-reshape.js` provide
 collections of functions designed to be used for this purpose.
 
 More functions will be added to the `match` and `makeMatch` namespaces in the future.

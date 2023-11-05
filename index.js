@@ -2,7 +2,7 @@ import {
   match,
   makeMatch,
   runTransformApplication,
-} from "./js-trx.js";
+} from "./json-reshape.js";
 
 const modelLibrary = {}
 modelLibrary.equipment = {
