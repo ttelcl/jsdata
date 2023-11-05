@@ -104,6 +104,7 @@ name, you don't invoke them).
 | `match.boolean` | A matcher that only matches booleans. Equivalent to speciying `true` or `false` |
 | `match.null` | A matcher that only matches null. Equivalent to speciying `null` |
 | `match.fail` | A matcher that does not match anything. Can be used to explicitly not project a field that otherwise would be projected |
+| `match.any` | A matcher that matches anything, copying the input fragment without further processing |
 
 ### Matcher factory functions (makeMatch.*)
 

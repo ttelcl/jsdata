@@ -96,6 +96,11 @@ modelLibrary.sampleName2b = {
   ]),
 }
 
+modelLibrary.sampleAny1 = {
+  character: { name: "" },
+  location: match.any,
+}
+
 modelLibrary.default = modelLibrary.sampleCharacter1
 
 runTransformApplication(modelLibrary, [...process.argv])

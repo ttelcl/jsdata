@@ -231,6 +231,10 @@ export const match = {
     return undefined;
   },
 
+  any: function (data) {
+    return data;
+  }
+
 }
 
 /**
