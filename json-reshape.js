@@ -99,14 +99,16 @@ function projectObject(data, model) {
 }
 
 /**
- * Project an input array to an array of elements matching one of the models
+ * Project an input array to an array of elements matching one of the models.
+ * The child models are tried in order, until a match is found
  * @param {any[]} data The data array to project
  * @param {any[]} model The array of models to probe for mapping
- * @param {boolean} nullIfNotMatching If true, non-matching data elements are replaced by
- * null instead of being skipped altogether
+ * @param {(any) => any} [transform] Optional transformation of
+ * child match results, applied to a matching child transform result
+ * before deciding if it really matched.
  * @returns {any[] | undefined}
  */
-function projectArray(data, model, nullIfNotMatching) {
+function projectArray(data, model, transform) {
   if (data === null || typeof (data) !== "object" || !Array.isArray(data)) {
     return undefined;
   }
@@ -118,6 +120,9 @@ function projectArray(data, model, nullIfNotMatching) {
     let projected = undefined
     for (const modelValue of model) {
       projected = projectAny(dataValue, modelValue)
+      if (transform) {
+        projected = transform(projected)
+      }
       if (projected !== undefined) { break }
     }
     if (projected !== undefined) {
@@ -158,7 +163,7 @@ function getModelMatcher(model) {
     case "array":
       // The model only matches an array, and the data is projected
       // to the specification of the content in the model array
-      return (data) => projectArray(data, model, false);
+      return (data) => projectArray(data, model);
     case "object":
       // The model only matches an object (that is not null nor an array),
       // and the data is projected to the specification of the content in
@@ -225,6 +230,19 @@ export const match = {
 
 }
 
+export const valueTransforms = {
+  notEmpty: function (value) {
+    switch (typeofEx(value)) {
+      case "array":
+        return value.length > 0 ? value : undefined
+      case "object":
+        return Object.keys(value).length > 0 ? value : undefined
+      default:
+        return undefined
+    }
+  }
+}
+
 /**
  * A namespace that provides several matcher factory functions:
  * functions that return a matcher function as their output.
@@ -239,7 +257,7 @@ export const makeMatch = {
    * @returns {matchFunction}
    */
   object: function (model) {
-    return (value) => projectObject(value, model)
+    return (data) => projectObject(data, model)
   },
 
   /**
@@ -248,7 +266,36 @@ export const makeMatch = {
    * @returns {matchFunction} 
    */
   array: function (model) {
-    return (value) => projectArray(value, model, false)
+    return (data) => projectArray(data, model)
+  },
+
+  /**
+   * Returns a matcher function that applies the default
+   * matcher for the model to the data, but subsequently
+   * applies valueTransforms.notEmpty() to the result,
+   * rejecting empty arrays, empty objects, and anything
+   * that was not an array or object
+   * @param {any[] | Object.<string,any>} model 
+   * @returns {matchFunction}
+   */
+  notEmpty: function (model) {
+    return (data) => {
+      const value = projectAny(data, model)
+      return valueTransforms.notEmpty(value)
+    }
+  },
+
+  /**
+   * Similar to the default array matcher, but rejecting
+   * children that project to an empty object or array,
+   * or do not project to an object or array at all
+   * @param {any[]} arrayModel The array model to match
+   * @returns {matchFunction}
+   */
+  firstNotEmpty: function(arrayModel) {
+    return (data) => {
+      return projectArray(data, arrayModel, valueTransforms.notEmpty)
+    }
   },
 
   /**
