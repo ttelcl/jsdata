@@ -1,4 +1,4 @@
-# jsdata
+# jsdata / json-reshape
 
 # Purpose
 
@@ -87,6 +87,7 @@ name, you don't invoke them).
 | `match.string` | A matcher that only matches string values. Equivalent to specifying a string. |
 | `match.number` | A matcher that only matches numbers. Equivalent to specifying a number |
 | `match.boolean` | A matcher that only matches booleans. Equivalent to speciying `true` or `false` |
+| `match.null` | A matcher that only matches null. Equivalent to speciying `null` |
 | `match.fail` | A matcher that does not match anything. Can be used to explicitly not copy a field that otherwise would be copied |
 
 ### Indirect matcher functions (makeMatch.*)

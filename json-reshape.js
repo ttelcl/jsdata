@@ -168,7 +168,7 @@ function getModelMatcher(model) {
       // Returns a matcher that always fails
       return match.fail;
     case "null":
-      throw new Error("Model objects do not support 'null' directly")
+      return match.null;
     default:
       throw new Error(`Unexpected model type "${modelType}"`)
   }
@@ -185,25 +185,6 @@ function projectAny(data, model) {
   const matcher = getModelMatcher(model);
   const result = matcher(data, model);
   return result;
-}
-
-/**
- * Project a data object to the named model selected from the given
- * model library
- * @param {any} data The data to project
- * @param {Object.<string,any> | any} modelOrLibray A map from model names to models, or the
- * model itself if modelName is undefined.
- * @param {string | undefined} modelName The name of the model (if undefined, modelOrLibrary
- * is interpreted as the model itself)
- * @returns {any} The projected data
- */
-export function projectToModel(data, modelOrLibrary, modelName) {
-  const model = modelName === undefined ? modelOrLibrary : modelOrLibrary[modelName]
-  if (model === undefined) {
-    const modelNames = Object.keys(modelOrLibrary).join(", ")
-    throw new Error(`Unknown model "${modelName}". Known model names are: ${modelNames}`)
-  }
-  return projectAny(data, model);
 }
 
 /**
@@ -241,6 +222,10 @@ export const match = {
     return undefined;
   },
 
+  null: function (value, model) {
+    return value === null ? null : undefined;
+  },
+
   _object: function (value, model) {
     if (typeof (value) === "object" && !Array.isArray(value)) {
       return projectObject(value, model);
@@ -275,7 +260,7 @@ export const makeMatch = {
    * @returns {matchFunction}
    */
   object: function (model) {
-    return (value, ignored) => match._object(value, model)
+    return (value, ignored) => projectObject(value, model)
   },
 
   /**
@@ -284,7 +269,7 @@ export const makeMatch = {
    * @returns {matchFunction} 
    */
   array: function (model) {
-    return (value, ignored) => match._array(value, model)
+    return (value, ignored) => projectArray(value, model, false)
   },
 
   /**
@@ -296,7 +281,7 @@ export const makeMatch = {
    */
   flatten: function (model) {
     return (value, ignored) => {
-      const value2 = match._object(value, model)
+      const value2 = projectObject(value, model)
       if (value2 === undefined) {
         return undefined
       } else {
@@ -417,6 +402,24 @@ export function saveJson(filename, data) {
     data = JSON.stringify(data, null, 2)
   }
   writeFileSync(filename, data) // UTF8 is default
+}
+
+/**
+ * Project a data object to the named model selected from the given model library.
+ * @param {any} data The data to project
+ * @param {Object.<string,any> | any} modelOrLibray A map from model names to models, or the
+ * model itself if modelName is undefined.
+ * @param {string | undefined} modelName The name of the model (if undefined, modelOrLibrary
+ * is interpreted as the model itself)
+ * @returns {any} The projected data
+ */
+export function projectToModel(data, modelOrLibrary, modelName) {
+  const model = (modelName === undefined || modelName === null) ? modelOrLibrary : modelOrLibrary[modelName]
+  if (model === undefined) {
+    const modelNames = Object.keys(modelOrLibrary).join(", ")
+    throw new Error(`Unknown model "${modelName}". Known model names are: ${modelNames}`)
+  }
+  return projectAny(data, model);
 }
 
 /**
