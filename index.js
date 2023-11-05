@@ -5,6 +5,14 @@ import {
 } from "./json-reshape.js";
 
 const modelLibrary = {}
+
+modelLibrary.character = {
+  id: 0,
+  character: {
+    name: "", age: 0
+  }
+}
+
 modelLibrary.equipment = {
   character: {
     name: "",
@@ -21,7 +29,6 @@ modelLibrary.equipment = {
     name: "",
   }],
 }
-modelLibrary.default = modelLibrary.equipment
 modelLibrary.equipment2 = {
   character: {
     name: "",
@@ -38,5 +45,7 @@ modelLibrary.equipment2 = {
     name: "",
   }],
 }
+
+modelLibrary.default = modelLibrary.character
 
 runTransformApplication(modelLibrary, [...process.argv])
