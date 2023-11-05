@@ -1,5 +1,6 @@
 import {
-  trx,
+  match,
+  makeMatch,
   runTransformApplication,
 } from "./js-trx.js";
 
@@ -10,8 +11,8 @@ modelLibrary.equipment = {
     id: 0,
     realm: {
       name: "",
-      id: trx.number,
-      slug: trx.string
+      id: match.number,
+      slug: match.string
     },
   },
   equipped_items: [{
@@ -25,15 +26,15 @@ modelLibrary.equipment2 = {
   character: {
     name: "",
     id: 0,
-    realm: trx.flatten({
+    realm: makeMatch.flatten({
       name: "",
-      id: trx.number,
-      slug: trx.string
+      id: match.number,
+      slug: match.string
     }),
   },
   equipped_items: [{
-    item: trx.flatten({ id: 0 }),
-    slot: trx.flatten({ name: "" }),
+    item: makeMatch.flatten({ id: 0 }),
+    slot: makeMatch.flatten({ name: "" }),
     name: "",
   }],
 }

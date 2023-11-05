@@ -59,7 +59,7 @@ export function bindMergeFunction(umf, value) {
   if (value === undefined) {
     throw new Error(`Not expecting an undefined value here`)
   }
-  if (typeof(value) === "function") {
+  if (typeof (value) === "function") {
     throw new Error(`Not expecting a function value`)
   }
   return (args) => umf(args, value)
@@ -96,9 +96,9 @@ function projectObject(data, model) {
       if (projectedValue !== undefined) {
         if (typeof (projectedValue) === "function") {
           // assume it is a boundMergeFunction
-          projectedValue({hostObject: result, hostKey: key})
+          projectedValue({ hostObject: result, hostKey: key })
         } else {
-          result[key] = projectedValue 
+          result[key] = projectedValue
         }
       }
     }
@@ -129,9 +129,9 @@ function projectArray(data, model, nullIfNotMatching) {
       if (projected !== undefined) { break }
     }
     if (projected !== undefined) {
-      if (typeof(projected) === "function") {
+      if (typeof (projected) === "function") {
         // assume it is a boundMergeFunction that supports arrays
-        projected({hostArray: result})
+        projected({ hostArray: result })
       } else {
         result.push(projected)
       }
@@ -156,25 +156,25 @@ function getModelMatcher(model) {
       return model;
     case "string":
       // The model only matches when the data is a string
-      return trx.string;
+      return match.string;
     case "number":
       // The model only matches when the data is a number
-      return trx.number;
+      return match.number;
     case "boolean":
       // The model only matches true or false
-      return trx.boolean;
+      return match.boolean;
     case "array":
       // The model only matches an array, and the data is projected
       // to the specification of the content in the model array
-      return trx._array;
+      return match._array;
     case "object":
       // The model only matches an object (that is not null nor an array),
       // and the data is projected to the specification of the content in
       // the model object
-      return trx._object;
+      return match._object;
     case "undefined":
       // Returns a matcher that always fails
-      return trx.fail;
+      return match.fail;
     case "null":
       throw new Error("Model objects do not support 'null' directly")
     default:
@@ -215,10 +215,18 @@ export function projectToModel(data, modelOrLibrary, modelName) {
 }
 
 /**
- * A collection of transformation functions for use in your
- * models.
+ * A namespace to act as a collection of matcher functions. A matcher function
+ * {(data: any, model: any) => any} takes a data fragment from the input JSON and
+ * a model to match and returns on of the following to indicate the projected
+ * content:
+ * - undefined, indicating that there was no match
+ * - a JSON compatible item (string, number, boolean, null, array, object) to
+ *   act as the resulting fragment
+ * - a bound merge function, {(MergeArguments) => undefined}, which modifies
+ *   the parent result object or array in some way other than setting the
+ *   property or pushing the value.
  */
-export const trx = {
+export const match = {
   string: function (value, model) {
     if (typeof (value) === "string") {
       return value;
@@ -258,61 +266,81 @@ export const trx = {
     return undefined;
   },
 
+}
+
+/**
+ * A namespace that provides several matcher factory functions:
+ * functions that return a matcher function as their output.
+ * Usually the matcher functions returned by these matcher factories
+ * have their model bound inside, so they ignore the model they
+ * get as an argument.
+ */
+export const makeMatch = {
   /**
-   * This is not a matcher itself, but calling it returns a matcher
-   * function that matches the model object
+   * Returns a matcher function that matches the model object
    * @param {Object.<string,any>} model 
+   * @returns {matchFunction}
    */
   object: function (model) {
-    return (value, ignored) => trx._object(value, model)
+    return (value, ignored) => match._object(value, model)
   },
 
   /**
-   * This is not a matcher itself, but calling it returns a matcher
-   * function that matches the model array
-   * @param {any[]} model 
+   * Returns a matcher function that matches the model array
+   * @param {any[]} model
+   * @returns {matchFunction} 
    */
   array: function (model) {
-    return (value, ignored) => trx._array(value, model)
+    return (value, ignored) => match._array(value, model)
   },
 
   /**
-   * Create a matcher function that flattens the intermediate object created
+   * Returns a matcher function that flattens the intermediate object created
    * by matching the intermediate model into the host object
    * @param {Object.<string,any>} model The model for the intermediate object
-   * @returns A matcher function that in turn either returns a bound
-   * merge function or undefined.
+   * @returns {matchFunction} A matcher function that in turn either returns a
+   * merge function bound to the model or undefined (to indicate a non-match).
    */
   flatten: function (model) {
     return (value, ignored) => {
-      const value2 = trx._object(value, model)
+      const value2 = match._object(value, model)
       if (value2 === undefined) {
         return undefined
       } else {
-        return bindMergeFunction(flattenUnbound, value2)
+        return bindMergeFunction(unboundMerge.flatten, value2)
       }
     }
   },
 
-
 }
 
 /**
- * The unbound merge function backing the "flatten" functionality
- * @param {MergeArguments} args 
- * @param {any} value 
+ * A namespace object holding a selection of unbound merge functions
+ * {(args:MergeArguments,value:any) => undefined}. 
+ * Use bindMergFunction() to bind these into bound merge functions.
+ * An unbound merge function takes a MergeArguments target descriptor
+ * and a value to insert that value into the target array or object
+ * in some way other than usual.
  */
-function flattenUnbound(args, value) {
-  if (value === undefined) {
-    throw new Error(`Not expecting value 'undefined' here. Did you try to call this without binding?`)
-  }
-  const {hostObject, hostKey} = args
-  if (!hostObject || !hostKey) {
-    throw new Error(`Expecting a host object to merge data into and a key ("flatten" can only be used in objects, not arrays)`)
-  }
-  for(const [k,v] of Object.entries(value)) {
-    hostObject[`${hostKey}-${k}`] = v
-  }
+export const unboundMerge = {
+  /**
+   * The unbound merge function backing the "makeMatch.flatten" functionality
+   * @param {MergeArguments} args 
+   * @param {any} value 
+   */
+  flatten: function (args, value) {
+    if (value === undefined) {
+      throw new Error(`Not expecting value 'undefined' here. Did you try to call this without binding?`)
+    }
+    const { hostObject, hostKey } = args
+    if (!hostObject || !hostKey) {
+      throw new Error(`Expecting a host object to merge data into and a key ("flatten" can only be used in objects, not arrays)`)
+    }
+    for (const [k, v] of Object.entries(value)) {
+      hostObject[`${hostKey}-${k}`] = v
+    }
+  },
+
 }
 
 // ------------------------------------------------------------------------
