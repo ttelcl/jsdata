@@ -30,15 +30,15 @@ node index.js -m model -f input.json output.json
 `-f input.json`
 
 Specifies the input file and generates an output file name based on the input 
-and the model. 
+and the model. Repeatable.
 
 `-f input.json output.json`
 
-Specifies the input file and the output file. 
+Specifies the input file and the output file. Repeatable.
 
 `-f input.json -`
 
-Specifies the input file and prints the output to stdout. 
+Specifies the input file and prints the output to stdout. Repeatable.
 
 `-m model`
 

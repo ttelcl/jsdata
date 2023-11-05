@@ -1,0 +1,50 @@
+{
+  "id": 4242,
+  "character": {
+    "name": "Name",
+    "age": 42
+  },
+  "location": {
+    "id": 42,
+    "label": "home",
+    "details": [
+      "A cosy home",
+      "somewhere in a city",
+      1
+    ]
+  },
+  "words": [
+    {
+      "en": "street",
+      "fi": "katu",
+      "nl": "straat"
+    },
+    {
+      "en": "house",
+      "fi": "koti",
+      "nl": "huis"
+    },
+    {
+      "en": "animal",
+      "nl": "dier"
+    },
+    {
+      "fi": "ananas",
+      "nl": "ananas"
+    }
+  ],
+  "items": [
+    {
+      "type": "weapon",
+      "name": "sword",
+      "id": 100,
+      "quality": "normal"
+    },
+    {
+      "type": "chest",
+      "name": "hauberk",
+      "id": 101,
+      "quality": "rare"
+    }
+  ]
+}
