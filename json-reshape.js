@@ -106,9 +106,12 @@ function projectObject(data, model) {
  * @param {(any) => any} [transform] Optional transformation of
  * child match results, applied to a matching child transform result
  * before deciding if it really matched.
+ * @param {boolean} [nullIfNotMatching] If true, then insert null
+ * for any unmatched elements (so the result array has the same
+ * length as the input)
  * @returns {any[] | undefined}
  */
-function projectArray(data, model, transform) {
+function projectArray(data, model, transform, nullIfNotMatching) {
   if (data === null || typeof (data) !== "object" || !Array.isArray(data)) {
     return undefined;
   }
@@ -132,7 +135,7 @@ function projectArray(data, model, transform) {
       } else {
         result.push(projected)
       }
-    } else if (nullIfNotMatching) {
+    } else if (nullIfNotMatching === true) {
       result.push(null)
     }
   }
@@ -230,7 +233,17 @@ export const match = {
 
 }
 
+/**
+ * A collection of functions to transform a projection result (or input,
+ * if you'd like so) in some way.
+ */
 export const valueTransforms = {
+  /**
+   * Pass the value unmodified if it is an array with at least one element
+   * or an object with at least one property. Return undefined in all other cases.
+   * @param {any[] | Object.<string,any>} value 
+   * @returns {any[] | Object.<string,any> | undefined}
+   */
   notEmpty: function (value) {
     switch (typeofEx(value)) {
       case "array":
@@ -240,7 +253,35 @@ export const valueTransforms = {
       default:
         return undefined
     }
-  }
+  },
+
+  /**
+   * If the value is an array, then if it contains one value, return that value, or return
+   * undefined if it contains not precisely one value.
+   * Similarly if value is an object, then if it has one property return that property's
+   * value, or undefined otherwise.
+   * If the value is a primitive value return it.
+   * Otherwise return undefined
+   * @param {any[] | Object.<string,any>} value 
+   * @returns 
+   */
+  oneValue: function (value) {
+    switch (typeofEx(value)) {
+      case "array":
+        return value.length == 1 ? value[0] : undefined
+      case "object":
+        const keys = Object.keys(value)
+        return keys.length == 1 ? value[keys[0]] : undefined
+      case "string":
+      case "number":
+      case "boolean":
+      case "null":
+        return value;
+      default:
+        return undefined
+    }
+  },
+
 }
 
 /**
@@ -286,15 +327,75 @@ export const makeMatch = {
   },
 
   /**
+   * Runs the standard array matcher with the modification that
+   * any matching child projection results are transformed by
+   * the given transform function (and rejected if that
+   * transform returns undefined)
+   * @param {any[]} arrayModel 
+   * @param {(value:any) => any} transform 
+   * @returns {matchFunction}
+   */
+  arrayTransformed: function (arrayModel, transform) {
+    return (data) => {
+      return projectArray(data, arrayModel, transform)
+    }
+  },
+
+  /**
+   * Returns a matcher that tries to match each of the provided
+   * models to the data value, returning the first succesful match.
+   * An optional transform can be used to transform the result of
+   * each attempted projection, for instance to reject that result
+   * upon closer inspection.
+   * @param {any[]} arrayOfModels 
+   * @param {(value:any) => any} [transform]
+   * @returns {matchFunction}
+   */
+  firstMatch: function (arrayOfModels, transform) {
+    return (data) => {
+      const result = projectArray([data], arrayOfModels, transform)
+      if (result && result.length > 0) {
+        return result[0]
+      }
+      return undefined
+    }
+  },
+
+  /**
+   * Returns a matcher that projects the data object to each of the given model
+   * objects, returning the value of the first model match result that has precisely
+   * one property. Or in other words: this is a shortcut to use makeMatch.firstMatch
+   * with the valueTransforms.oneValue transform
+   * @param {Object.<string,any>[]|any} modelsArray 
+   * @returns {matchFunction}
+   */
+  firstOneValue: function (modelsArray) {
+    return makeMatch.firstMatch(modelsArray, valueTransforms.oneValue)
+  },
+
+  /**
    * Similar to the default array matcher, but rejecting
    * children that project to an empty object or array,
    * or do not project to an object or array at all
    * @param {any[]} arrayModel The array model to match
    * @returns {matchFunction}
    */
-  firstNotEmpty: function(arrayModel) {
+  firstNotEmpty: function (arrayModel) {
+    return makeMatch.arrayTransformed(arrayModel, valueTransforms.notEmpty)
+  },
+
+  /**
+   * Return a matcher that first applies matches the data to the model,
+   * then passes the result through the transform function (even if the result
+   * was 'undefined' to indicate a non-match!)
+   * @param {any} model The model to match
+   * @param {(value:any) => any} transform The transform to apply to the match result
+   * @returns {matchFunction}
+   */
+  transform: function (model, transform) {
     return (data) => {
-      return projectArray(data, arrayModel, valueTransforms.notEmpty)
+      const result = projectAny(data, model)
+      return transform ? transform(result) : result
     }
   },
 

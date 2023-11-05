@@ -1,6 +1,7 @@
 import {
   match,
   makeMatch,
+  valueTransforms,
   runTransformApplication,
 } from "./json-reshape.js";
 
@@ -22,15 +23,15 @@ modelLibrary.sampleCharacter2 = {
 
 modelLibrary.sampleLocation1 = {
   character: makeMatch.flatten({ name: "" }),
-  location: { details: [ "" ] }
+  location: { details: [""] }
 }
 modelLibrary.sampleLocation2 = {
   character: makeMatch.flatten({ name: "" }),
-  location: { details: [ 0 ] }
+  location: { details: [0] }
 }
 modelLibrary.sampleLocation3 = {
   character: makeMatch.flatten({ name: "" }),
-  location: { details: [ "", 0 ] }
+  location: { details: ["", 0] }
 }
 
 modelLibrary.sampleWords1 = {
@@ -47,7 +48,7 @@ modelLibrary.sampleWords4a = {
   "words": [
     // This does probably not what you intended: the first item matches
     // as "{}" instead of not matching the 4th word
-    { "en": "" }, 
+    { "en": "" },
     { "nl": "" },
   ]
 }
@@ -61,9 +62,38 @@ modelLibrary.sampleWords4b = {
 modelLibrary.sampleWords4c = {
   // This is another fix: modify array matching semantics
   "words": makeMatch.firstNotEmpty([
+    { "en": "" },
+    { "nl": "" },
+  ])
+}
+modelLibrary.sampleWords4d = {
+  // Equivalent to sampleWords4c
+  "words": makeMatch.arrayTransformed([
+    { "en": "" },
+    { "nl": "" },
+  ], valueTransforms.notEmpty)
+}
+
+modelLibrary.sampleName1 = {
+  name: makeMatch.firstMatch([
     { "nl": "" },
     { "en": "" },
-  ])
+  ], valueTransforms.notEmpty),
+}
+
+modelLibrary.sampleName2a = {
+  name: makeMatch.firstMatch([
+    { "nl": "" },
+    { "en": "" },
+  ], valueTransforms.oneValue),
+}
+
+modelLibrary.sampleName2b = {
+  // same as sampleName2a, using the shorthand firstOneValue
+  name: makeMatch.firstOneValue([
+    { "nl": "" },
+    { "en": "" },
+  ]),
 }
 
 modelLibrary.default = modelLibrary.sampleCharacter1

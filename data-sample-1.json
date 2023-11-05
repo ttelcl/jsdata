@@ -37,6 +37,11 @@
       "fi": "kauppa"
     }
   ],
+  "name": {
+    "fi": "Juha",
+    "nl": "Jan",
+    "en": "John"
+  },
   "items": [
     {
       "type": "weapon",
